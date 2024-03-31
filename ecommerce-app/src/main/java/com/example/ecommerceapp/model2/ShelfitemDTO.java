@@ -1,7 +1,13 @@
 package com.example.ecommerceapp.model2;
 
-import javax.persistence.Column;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import javax.persistence.Column;
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ShelfitemDTO {
     private String shopperId;
     private String productId;

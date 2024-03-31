@@ -21,7 +21,4 @@ public class Shopper {
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "shopper_id", referencedColumnName = "shopper_id")
     private List<Shelfitem> shelf;
-
-    @Column(name = "shopper_name")
-    private String shopperName;
 }
