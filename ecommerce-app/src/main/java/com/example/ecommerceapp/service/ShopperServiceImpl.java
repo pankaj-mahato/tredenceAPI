@@ -4,6 +4,7 @@ import com.example.ecommerceapp.model.Product;
 import com.example.ecommerceapp.model.Shelfitem;
 import com.example.ecommerceapp.model.Shopper;
 import com.example.ecommerceapp.model2.ShelfitemDTO;
+import com.example.ecommerceapp.model2.ShelfitemInputDTO;
 import com.example.ecommerceapp.model2.ShopperDTO;
 import com.example.ecommerceapp.repository.ProductRepository;
 import com.example.ecommerceapp.repository.ShelfitemRepository;
@@ -24,29 +25,6 @@ public class ShopperServiceImpl implements ShopperService{
     ProductRepository productRepository;
 
     @Override
-    public Shopper shopperDTOtoShopperConverter(ShopperDTO s){
-        Shopper shopper = new Shopper();
-        shopper.setShopperId(s.getShopperId());
-        return shopper;
-    }
-
-    @Override
-    public List<Shelfitem> shopperDTOtoShelfitemConverter(ShopperDTO shopperDTO){
-        int countShelves=shopperDTO.getShelf().size();
-        int n = 0;
-        List<Shelfitem> shelfitems= new ArrayList<>();
-        while(n< countShelves){
-            Shelfitem s = new Shelfitem();
-            s.setShopperId(shopperDTO.getShopperId());
-            s.setRelevancyScore(shopperDTO.getShelf().get(n).getRelevancyScore());
-            s.setProductId(shopperDTO.getShelf().get(n).getProductId());
-            shelfitems.add(s);
-            n++;
-        }
-        return shelfitems;
-    }
-
-    @Override
     public void addShopperDTO(ShopperDTO shopperDTO) {
         Shopper s = shopperDTOtoShopperConverter(shopperDTO);
         shopperRepository.save(s);
@@ -60,7 +38,7 @@ public class ShopperServiceImpl implements ShopperService{
 
     @Override
     public void removeShopper(String shopperId) {
-        shelfitemRepository.deleteByShopperId(shopperId);
+        shelfitemRepository.deleteAllByShopperId(shopperId);
         shopperRepository.deleteById(shopperId);
     }
 
@@ -77,30 +55,42 @@ public class ShopperServiceImpl implements ShopperService{
     }
 
     @Override
-    public ShopperDTO addShelfItemToShopper(ShelfitemDTO shelfitemDTO) {
+    public ShopperDTO addShelfItemToShopper(ShelfitemInputDTO shelfitemInputDTO) {
         //addShelfItemToShopper
         Shelfitem s = new Shelfitem();
-        s.setShopperId(shelfitemDTO.getShopperId());
-        s.setRelevancyScore(shelfitemDTO.getRelevancyScore());
-        s.setProductId(shelfitemDTO.getProductId());
+        s.setShopperId(shelfitemInputDTO.getShopperId());
+        s.setRelevancyScore(shelfitemInputDTO.getRelevancyScore());
+        s.setProductId(shelfitemInputDTO.getProductId());
         shelfitemRepository.save(s);
-        //return whole shopperdto
+        //return whole shopperDTO
         ShopperDTO shopperDTO = new ShopperDTO();
-        shopperDTO.setShopperId(shelfitemDTO.getShopperId());
-        shopperDTO.setShelf(shelfitemRepository.findByShopperId(shelfitemDTO.getShopperId()));
+        List<Shelfitem> shelfitems = shelfitemRepository.findAllByShopperId(shelfitemInputDTO.getShopperId());
+        List<ShelfitemDTO> shelfitemDTOS = new ArrayList<>();
+        shopperDTO.setShopperId(shelfitemInputDTO.getShopperId());
+        int n=0;
+        while(n<shelfitems.size()){
+            ShelfitemDTO shelfitemDTO = new ShelfitemDTO();
+            shelfitemDTO.setRelevancyScore(shelfitems.get(n).getRelevancyScore());
+            shelfitemDTO.setProductId(shelfitems.get(n).getShopperId());
+            n++;
+            shelfitemDTOS.add(shelfitemDTO);
+        }
+        shopperDTO.setShelf(shelfitemDTOS);
         return shopperDTO;
     }
 
     @Override
     public ShopperDTO getProductsByShopperId(String shopperId) {
-        List<Shelfitem> allShelfitems=shelfitemRepository.findAll();
-        List<Shelfitem> shelfitems = new ArrayList<>();
-        Iterator itr=allShelfitems.iterator();
-        while (itr.hasNext()){
-            Shelfitem s=(Shelfitem) itr;
-            if(s.getShopperId().equalsIgnoreCase(shopperId)) shelfitems.add(s);
+        List<Shelfitem> shelfitems = shelfitemRepository.findAllByShopperId(shopperId);
+        List<ShelfitemDTO> shelfitemDTOS = new ArrayList<>();
+        int n=0;
+        while(n< shelfitems.size()){
+            ShelfitemDTO shelfitemDTO = new ShelfitemDTO();
+            shelfitemDTO.setProductId(shelfitems.get(n).getProductId());
+            shelfitemDTO.setRelevancyScore(shelfitems.get(n).getRelevancyScore());
+            n++;
         }
-        return new ShopperDTO(shopperId, shelfitems);
+        return new ShopperDTO(shopperId, shelfitemDTOS);
     }
 
     @Override
@@ -109,7 +99,7 @@ public class ShopperServiceImpl implements ShopperService{
         //if not available throw exception
         Shopper s = shopperRepository.findById(shopperId).get();
         //step-02 find what are there in shopper list
-        List<Shelfitem> shelfitems = shelfitemRepository.findByShopperId(shopperId);
+        List<Shelfitem> shelfitems = shelfitemRepository.findAllByShopperId(shopperId);
             //remove the products whose category & brand doesn't match
         Iterator iterator=shelfitems.iterator();
         while (iterator.hasNext()){
@@ -127,9 +117,56 @@ public class ShopperServiceImpl implements ShopperService{
                 shelfitems.remove(shelfitems.size()-1);
             }
         }
-        //Now we got the result as shelfitems
-        //Now we have to convert the shelfitems to shopperdto object
-        return null;
+        //Now we got the result as List<Shelfitem>
+        //We need to convert the List<Shelfitem> to List<ShelfitemDTO>
+        ShopperDTO shopperDTO = new ShopperDTO();
+        shopperDTO.setShopperId(shopperId);
+        List<ShelfitemDTO> shelfitemDTOS = new ArrayList<>();
+        int i=0;
+        while (i< shelfitems.size()){
+            ShelfitemDTO shelfitemDTO = new ShelfitemDTO();
+            shelfitemDTO.setProductId( shelfitems.get(i).getProductId() );
+            shelfitemDTO.setRelevancyScore( shelfitems.get(i).getRelevancyScore());
+            shelfitemDTOS.add(shelfitemDTO);
+            i++;
+        }
+        shopperDTO.setShelf(shelfitemDTOS);
+        return shopperDTO;
     }
+
+    @Override
+    public ShelfitemInputDTO shelfitemtoShelfitemDTOConverter(Shelfitem shelfitem){
+        ShelfitemInputDTO shelfitemDTO = new ShelfitemInputDTO();
+        shelfitemDTO.setProductId( shelfitem.getProductId() );
+        shelfitemDTO.setRelevancyScore(shelfitem.getRelevancyScore() );
+        shelfitemDTO.setShopperId( shelfitem.getShopperId() );
+        return shelfitemDTO;
+    }
+
+    @Override
+    public Shopper shopperDTOtoShopperConverter(ShopperDTO shopperDTO){
+        Shopper shopper = new Shopper();
+        shopper.setShopperId(shopperDTO.getShopperId());
+        return shopper;
+    }
+
+    @Override
+    public List<Shelfitem> shopperDTOtoShelfitemConverter(ShopperDTO shopperDTO){
+        //an empty arraylist
+        List<Shelfitem> shelfitems= new ArrayList<>();
+
+        int countShelves=shopperDTO.getShelf().size();
+        int n = 0;
+        while(n< countShelves){
+            Shelfitem s = new Shelfitem();
+            s.setShopperId(shopperDTO.getShopperId());
+            s.setRelevancyScore(shopperDTO.getShelf().get(n).getRelevancyScore());
+            s.setProductId(shopperDTO.getShelf().get(n).getProductId());
+            shelfitems.add(s);
+            n++;
+        }
+        return shelfitems;
+    }
+
 
 }

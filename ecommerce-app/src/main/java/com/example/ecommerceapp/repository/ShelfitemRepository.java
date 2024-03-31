@@ -8,8 +8,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 @Repository
 public interface ShelfitemRepository extends JpaRepository<Shelfitem, Long> {
-    List<Shelfitem> findByShopperId(String shopperId);
-    void deleteByShopperId(String shopperId);
+    List<Shelfitem> findAllByShopperId(String shopperId);
+    void deleteAllByShopperId(String shopperId);
 
 //    List<Shelfitem> findByNameContainingAndFatherNameContaining(String nameKeyword, String fatherNameKeyword);
 

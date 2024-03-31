@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ShelfitemDTO {
+public class ShelfitemInputDTO {
+    private String shopperId;
     private String productId;
     private long relevancyScore;
 }
